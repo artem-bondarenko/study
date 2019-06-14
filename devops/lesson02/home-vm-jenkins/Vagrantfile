@@ -2,28 +2,30 @@ ENV["LC_ALL"] = "en_US.UTF-8"
 
 $script = <<-EOF
 export LC_ALL=en_US.UTF-8
-#sudo yum -y update
-sudo yum -y install wget
-sudo cp /vagrant/nginx.repo /etc/yum.repo.d/nginx.repo
-sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
-sudo wget -O /etc/yum.repos.d/nginx.repo https://raw.githubusercontent.com/zulus911/lectures/master/lecture3/nginx.repo
+sudo yum -y update
+sudo yum -y install wget yum-utils
 sudo rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key
-sudo yum -y install jenkins nginx net-tools policycoreutils-python
-sudo wget -O /etc/sysconfig/jenkins https://raw.githubusercontent.com/zulus911/lectures/master/lecture2/jenkins
-sudo wget -O /etc/nginx/conf.d/default.conf https://raw.githubusercontent.com/zulus911/lectures/master/lecture2/default.conf
+sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
+sudo wget -O /etc/yum.repos.d/nginx.repo https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson02/home-vm-jenkins/nginx.repo
+sudo yum -y install jenkins nginx net-tools policycoreutils-python java
+sudo wget -O /etc/sysconfig/jenkins https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson02/home-vm-jenkins/jenkins
+sudo wget -O /etc/nginx/conf.d/default.conf https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson02/home-vm-jenkins/default.conf
 sudo service jenkins start
 sudo service nginx start
 EOF
 
 Vagrant.configure("2") do |config|
-  config.vm.define "test-vagrant" do |test|
-    test.vm.box = "centos/7"
-    test.vm.hostname = "stan.box"
-    test.vm.network :private_netwrk, ip: "192.168.256.42"
-    test.vm.network :public_network, bridge: "en0: Wi-Fi (AirPort)", use_dhcp_assigned_default_route: true
-
-
-    test.vm.provision "shell", inline: $script
+  config.vm.define "centos7-jenkins" do |jenkins|
+    jenkins.vm.box = "centos/7"
+    jenkins.vm.hostname = "jenkins.box"
+    jenkins.vm.network "private_network", type: "dhcp"
+    jenkins.vm.network "public_network", bridge: "wlp3s0", use_dhcp_assigned_default_route: true
+    jenkins.vm.provision "shell", inline: $script
+    jenkins.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.name = "centos7-jenkins"
+      vb.cpus = 2
+    end
   end
 end
 
