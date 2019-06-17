@@ -11,13 +11,11 @@ sudo wget -O /etc/yum.repos.d/nginx.repo https://raw.githubusercontent.com/artem
 sudo yum -y install jenkins nginx net-tools policycoreutils-python java
 sudo wget -O /etc/sysconfig/jenkins https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson02/home-vm-jenkins/jenkins
 sudo wget -O /etc/nginx/conf.d/default.conf https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson02/home-vm-jenkins/default.conf
+sudo timedatectl set-timezone Europe/Kiev
 sudo setsebool -P httpd_can_network_connect on 
 sudo systemctl start jenkins.service
 sudo systemctl start nginx.service
 sudo systemctl start firewalld.service
-sudo firewall-cmd --permanent --new-service=jenkins
-sudo firewall-cmd --permanent --service=jenkins --set-short="Jenkins Service Ports"
-sudo firewall-cmd --permanent --service=jenkins --set-description="Jenkins service firewalld port exceptions"
 sudo firewall-cmd --permanent --service=jenkins --add-port=22222/tcp
 sudo firewall-cmd --permanent --zone=public --remove-service=dhcpv6-client
 sudo firewall-cmd --permanent --zone=public --add-service=http
