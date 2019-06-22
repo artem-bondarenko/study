@@ -1,0 +1,78 @@
+ENV["LC_ALL"] = "en_US.UTF-8"
+
+$scriptjenkins = <<-EOFJENKINS
+export LC_ALL=en_US.UTF-8
+# sudo yum -y update
+sudo yum -y install wget yum-utils
+sudo rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key
+sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
+sudo yum -y install jenkins net-tools policycoreutils-python java
+sudo wget -O /etc/sysconfig/jenkins https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson03/class-vm-cluster-jenkins/jenkins
+sudo timedatectl set-timezone Europe/Kiev
+sudo setsebool -P httpd_can_network_connect on 
+sudo systemctl start jenkins.service
+sudo systemctl start firewalld.service
+sudo firewall-cmd --permanent --zone=public --remove-service=dhcpv6-client
+sudo firewall-cmd --permanent --zone=public --add-service=jenkins
+sudo firewall-cmd --reload
+sudo systemctl enable jenkins.service
+sudo systemctl enable firewalld.service
+EOFJENKINS
+
+$scriptnginx = <<-EOFNGINX
+export LC_ALL=en_US.UTF-8
+# sudo yum -y update
+sudo yum -y install wget yum-utils
+sudo rpm --import https://nginx.org/keys/nginx_signing.key
+sudo wget -O /etc/yum.repos.d/nginx.repo https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson03/class-vm-cluster-jenkins/nginx.repo
+sudo yum -y install nginx net-tools policycoreutils-python java
+sudo wget -O /etc/sysconfig/jenkins https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson03/class-vm-cluster-jenkins/jenkins
+sudo wget -O /etc/nginx/conf.d/default.conf https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson03/class-vm-cluster-jenkins/default.conf
+sudo timedatectl set-timezone Europe/Kiev
+sudo setsebool -P httpd_can_network_connect on 
+sudo systemctl start nginx.service
+sudo systemctl start firewalld.service
+sudo firewall-cmd --permanent --zone=public --remove-service=dhcpv6-client
+sudo firewall-cmd --permanent --zone=public --add-service=http
+sudo firewall-cmd --reload
+sudo systemctl enable nginx.service
+sudo systemctl enable firewalld.service
+EOFNGINX
+
+Vagrant.configure("2") do |config|
+  config.vm.define "centos7-jenkins-01" do |jenkins01|
+    jenkins01.vm.box = "centos/7"
+    jenkins01.vm.hostname = "jenkins01.box"
+    jenkins01.vm.network "private_network", ip: "192.168.50.11"
+    jenkins01.vm.provision "shell", inline: $scriptjenkins
+    jenkins01.vm.provider "virtualbox" do |vbjenkins01|
+      vbjenkins01.memory = "1024"
+      vbjenkins01.name = "centos7-jenkins01"
+      vbjenkins01.cpus = 1
+    end
+  end
+  config.vm.define "centos7-jenkins-02" do |jenkins02|
+    jenkins02.vm.box = "centos/7"
+    jenkins02.vm.hostname = "jenkins02.box"
+    jenkins02.vm.network "private_network", ip: "192.168.50.12"
+    jenkins02.vm.provision "shell", inline: $scriptjenkins
+    jenkins02.vm.provider "virtualbox" do |vb|
+      vb.memory = "1024"
+      vb.name = "centos7-jenkins02"
+      vb.cpus = 1
+    end
+  end
+  config.vm.define "centos7-nginx" do |nginx|
+    nginx.vm.box = "centos/7"
+    nginx.vm.hostname = "nginx.box"
+    nginx.vm.network "private_network", ip: "192.168.50.1"
+    nginx.vm.network "public_network", bridge: "wlp3s0", use_dhcp_assigned_default_route: true
+    nginx.vm.provision "shell", inline: $scriptnginx
+    nginx.vm.provider "virtualbox" do |vbnginx|
+      vbnginx.memory = "2048"
+      vbnginx.name = "centos7-nginx"
+      vbnginx.cpus = 2
+    end
+  end
+end
+
