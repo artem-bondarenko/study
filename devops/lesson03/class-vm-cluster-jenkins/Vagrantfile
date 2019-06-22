@@ -65,7 +65,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "centos7-nginx" do |nginx|
     nginx.vm.box = "centos/7"
     nginx.vm.hostname = "nginx.box"
-    nginx.vm.network "private_network", ip: "192.168.50.1"
+    nginx.vm.network "private_network", ip: "192.168.50.254"
     nginx.vm.network "public_network", bridge: "wlp3s0", use_dhcp_assigned_default_route: true
     nginx.vm.provision "shell", inline: $scriptnginx
     nginx.vm.provider "virtualbox" do |vbnginx|
