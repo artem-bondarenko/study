@@ -1,0 +1,6 @@
+---
+- hosts: sessionhandlers
+
+  roles:
+    - common
+    - redis

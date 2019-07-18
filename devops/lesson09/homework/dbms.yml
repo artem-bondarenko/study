@@ -1,0 +1,6 @@
+---
+- hosts: dbms
+
+  roles:
+    - common
+    - mariadb

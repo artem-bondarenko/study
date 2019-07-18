@@ -1,0 +1,17 @@
+[frontends]
+frontend[1:2].example.com
+
+[backends]
+backend[1:6].example.com
+
+[dbms]
+db[1:3].example.com
+
+[sessionhandlers]
+redis.example.com
+
+[production:children]
+frontends
+backends
+dbms
+sessionhandlers

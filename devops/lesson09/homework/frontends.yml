@@ -1,0 +1,6 @@
+---
+- hosts: frontends
+
+  roles:
+    - common
+    - nginx
