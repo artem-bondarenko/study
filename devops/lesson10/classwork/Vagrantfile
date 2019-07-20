@@ -1,0 +1,64 @@
+ENV["LC_ALL"] = "en_US.UTF-8"
+
+$scriptnode = <<-EOFNODE
+export LC_ALL=en_US.UTF-8
+# sudo yum -y update
+sudo timedatectl set-timezone Europe/Kiev
+EOFNODE
+
+$scriptjenkins = <<-EOFJENKINS
+export LC_ALL=en_US.UTF-8
+# sudo yum -y update
+sudo yum -y install wget yum-utils
+sudo rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key
+sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
+sudo yum -y install jenkins net-tools policycoreutils-python java
+sudo wget -O /etc/sysconfig/jenkins https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson10/classwork/jenkins
+sudo timedatectl set-timezone Europe/Kiev
+sudo setsebool -P httpd_can_network_connect on 
+sudo systemctl start jenkins.service
+sudo systemctl start firewalld.service
+sudo firewall-cmd --permanent --zone=public --remove-service=dhcpv6-client
+sudo firewall-cmd --permanent --zone=public --add-service=jenkins
+sudo firewall-cmd --reload
+sudo systemctl enable jenkins.service
+sudo systemctl enable firewalld.service
+EOFJENKINS
+
+Vagrant.configure("2") do |config|
+  config.vm.define "centos7-host-01" do |host01|
+    host01.vm.box = "centos/7"
+    host01.vm.hostname = "host01.box"
+    host01.vm.network "private_network", ip: "192.168.50.11"
+    host01.vm.provision "shell", inline: $scriptnode
+    host01.vm.provider "virtualbox" do |vbhost01|
+      vbhost01.memory = "1024"
+      vbhost01.name = "centos7-host01"
+      vbhost01.cpus = 1
+    end
+  end
+  config.vm.define "centos7-host-02" do |host02|
+    host02.vm.box = "centos/7"
+    host02.vm.hostname = "host02.box"
+    host02.vm.network "private_network", ip: "192.168.50.12"
+    host02.vm.provision "shell", inline: $scriptnode
+    host02.vm.provider "virtualbox" do |vbhost02|
+      vbhost02.memory = "1024"
+      vbhost02.name = "centos7-host02"
+      vbhost02.cpus = 1
+    end
+  end
+  config.vm.define "centos7-jenkins" do |jenkins|
+    jenkins.vm.box = "centos/7"
+    jenkins.vm.hostname = "jenkins.box"
+    jenkins.vm.network "private_network", ip: "192.168.50.10"
+    jenkins.vm.network "public_network", bridge: "wlp3s0", use_dhcp_assigned_default_route: true
+    jenkins.vm.provision "shell", inline: $scriptjenkins
+    jenkins.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048"
+      vb.name = "centos7-jenkins"
+      vb.cpus = 2
+    end
+  end
+end
+
