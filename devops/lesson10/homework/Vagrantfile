@@ -1,0 +1,66 @@
+ENV["LC_ALL"] = "en_US.UTF-8"
+
+ssh_private_key = File.read("keys/ansible")
+ssh_public_key = File.read("keys/ansible.pub")
+
+$scriptmn = <<-EOFMN
+#sudo yum -y update
+sudo timedatectl set-timezone Europe/Kiev
+echo "#{ssh_public_key}" >> ~/.ssh/authorized_keys
+chmod u=rwx,go= ~/.ssh
+chmod u=rw,go= ~/.ssh/authorized_keys
+echo "192.168.50.10 control-node.ansible control-node" | sudo tee -a /etc/hosts
+echo "192.168.50.11 managed-node-01.ansible managed-node-01" | sudo tee -a /etc/hosts
+echo "192.168.50.12 managed-node-02.ansible managed-node-02" | sudo tee -a /etc/hosts
+EOFMN
+
+$scriptcn = <<-EOFCN
+#sudo yum -y update
+sudo yum -y install epel-release
+sudo yum -y install ansible
+sudo timedatectl set-timezone Europe/Kiev
+echo "#{ssh_public_key}" >> ~/.ssh/authorized_keys
+echo "#{ssh_private_key}" > ~/.ssh/ansible
+echo "Host *.ansible" >> ~/.ssh/config
+echo "   StrictHostKeyChecking no" >> ~/.ssh/config
+echo "   UserKnownHostsFile /dev/null" >> ~/.ssh/config
+echo "   IdentityFile ~/.ssh/ansible" >> ~/.ssh/config
+chmod u=rwx,go= ~/.ssh
+chmod u=rw,go= ~/.ssh/authorized_keys
+chmod u=rw,g=r,o= ~/.ssh/config
+chmod u=rw,go= ~/.ssh/ansible
+echo "192.168.50.10 control-node.ansible control-node" | sudo tee -a /etc/hosts
+echo "192.168.50.11 managed-node-01.ansible managed-node-01" | sudo tee -a /etc/hosts
+echo "192.168.50.12 managed-node-02.ansible managed-node-02" | sudo tee -a /etc/hosts
+ansible-playbook -i /vagrant/ansible/hosts /vagrant/ansible/configure.yml
+EOFCN
+
+Vagrant.configure("2") do |config|
+  (1..2).each do |i|
+    config.vm.define "managed-node-0#{i}" do |managednode|
+      managednode.vm.box = "centos/7"
+      managednode.vm.hostname = "managed-node-0#{i}.ansible"
+      managednode.vm.network "private_network", ip: "192.168.50.1#{i}"
+      managednode.vm.provision "shell", privileged: false, inline: $scriptmn
+      managednode.vm.provider "virtualbox" do |v|
+        v.memory = "1024"
+        v.name = "managed-node-0#{i}.ansible"
+        v.cpus = 1
+        v.linked_clone = true
+      end
+    end
+  end
+  config.vm.define "control-node" do |controlnode|
+    controlnode.vm.box = "centos/7"
+    controlnode.vm.hostname = "control-node.ansible"
+    controlnode.vm.network "private_network", ip: "192.168.50.10"
+    controlnode.vm.network "public_network", bridge: "wlp3s0", use_dhcp_assigned_default_route: true
+    controlnode.vm.provision "shell", privileged: false, inline: $scriptcn
+    controlnode.vm.provider "virtualbox" do |v|
+      v.memory = "2048"
+      v.name = "control-node.ansible"
+      v.cpus = 2
+      v.linked_clone = true
+    end
+  end
+end

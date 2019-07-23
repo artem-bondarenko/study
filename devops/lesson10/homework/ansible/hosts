@@ -1,0 +1,14 @@
+[managed_nodes]
+managed-node-0[1:2].ansible
+
+[control_nodes]
+control-node.ansible
+
+[production:children]
+managed_nodes
+control_nodes
+
+[all:vars]
+ansible_user=vagrant
+become=false
+
