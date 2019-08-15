@@ -1,0 +1,31 @@
+ENV["LC_ALL"] = "en_US.UTF-8"
+
+ssh_public_key = File.read("keys/ansible.pub")
+
+$scriptmn = <<-EOFMN
+#sudo yum -y update
+sudo timedatectl set-timezone Europe/Kiev
+echo "#{ssh_public_key}" >> ~/.ssh/authorized_keys
+chmod u=rwx,go= ~/.ssh
+chmod u=rw,go= ~/.ssh/authorized_keys
+echo "192.168.50.11 managed-node-01.ansible managed-node-01" | sudo tee -a /etc/hosts
+echo "192.168.50.12 managed-node-02.ansible managed-node-02" | sudo tee -a /etc/hosts
+EOFMN
+
+Vagrant.configure("2") do |config|
+  (1..1).each do |i|
+    config.vm.define "managed-node-0#{i}" do |managednode|
+      managednode.vm.box = "centos/7"
+      managednode.vm.hostname = "managed-node-0#{i}.ansible"
+      managednode.vm.network "private_network", ip: "192.168.50.1#{i}"
+      managednode.vm.network "public_network", bridge: "wlp3s0", use_dhcp_assigned_default_route: true
+      managednode.vm.provision "shell", privileged: false, inline: $scriptmn
+      managednode.vm.provider "virtualbox" do |v|
+        v.memory = "1024"
+        v.name = "managed-node-0#{i}.ansible"
+        v.cpus = 1
+        v.linked_clone = true
+      end
+    end
+  end
+end

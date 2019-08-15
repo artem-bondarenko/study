@@ -1,0 +1,4 @@
+---
+mariadb_dbname: "db"
+mariadb_username: "user"
+mariadb_password: "password"

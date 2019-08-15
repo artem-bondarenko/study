@@ -1,0 +1,11 @@
+[managed_nodes]
+managed-node-01.ansible
+
+[dbms]
+managed-node-01.ansible
+
+[production:children]
+managed_nodes
+
+[all:vars]
+ansible_user=vagrant
