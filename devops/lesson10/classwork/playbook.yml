@@ -1,0 +1,11 @@
+---
+- name: Test Playbook for Ansible
+  hosts: all
+  become: true
+  facts: false
+
+  tasks:
+    - name: Install VIM
+      yum:
+        name: vim
+        state: latest
