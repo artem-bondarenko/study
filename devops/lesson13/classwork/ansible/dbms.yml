@@ -1,0 +1,7 @@
+---
+
+- hosts: "dbms"
+  become: true
+  roles:
+    - common
+    - mariadb

@@ -1,0 +1,132 @@
+---
+- name: Add official MariaDB repository
+  yum_repository:
+    name: MariaDB
+    description: Official MariaDB repository
+    baseurl: "http://{{ mariadb_mirror }}/{{ mariadb_version }}/centos7-amd64"
+    gpgkey: https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+    gpgcheck: true
+  tags: mariadb
+
+- name: Install packages
+  yum:
+    name: "{{ mariadb_packages }}"
+    state: present
+  tags: mariadb
+
+- name: Configure swappiness
+  sysctl:
+    name: vm.swappiness
+    value: "{{ mariadb_swappiness }}"
+    state: present
+  when: mariadb_configure_swappiness
+  tags: mariadb
+
+- name: Ensure service is started
+  service:
+    name: "{{ mariadb_service }}"
+    state: started
+    enabled: true
+  tags: mariadb
+
+- name: Check if root password is set
+  shell: >
+    mysqladmin -u root status
+  changed_when: false
+  failed_when: false
+  register: root_pwd_check
+  tags: mariadb
+
+- name: Set MariaDB root password for the first time (root@localhost)
+  mysql_user:
+    name: root
+    password: "{{ mariadb_root_password }}"
+    host: localhost
+    state: present
+  when: root_pwd_check.rc == 0
+  tags: mariadb
+
+- name: Set MariaDB root password for 127.0.0.1, ::1
+  mysql_user:
+    name: root
+    password: "{{ mariadb_root_password }}"
+    host: "{{ item }}"
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    state: present
+  with_items:
+    - ::1
+    - 127.0.0.1
+  when: root_pwd_check.rc == 0
+  tags: mariadb
+
+- name: Remove the test database
+  mysql_db:
+    name: test
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    state: absent
+  tags: mariadb
+
+- name: Create user defined databases
+  mysql_db:
+    name: "{{ item.name }}"
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    state: present
+  with_items: "{{ mariadb_databases }}"
+  register: db_creation
+  tags: mariadb
+
+# Below, the databases are initialised, but only when the database was created
+# in the previous step. This ensures idempotence.
+
+- name: Copy database init scripts
+  copy:
+    src: "{{ item.item.init_script }}"
+    dest: "/tmp/{{ item.item.init_script|basename }}"
+    mode: '0600'
+  with_items: "{{ db_creation.results }}"
+  when: item.changed and item.item.init_script is defined
+  tags: mariadb
+
+- name: Initialise databases
+  mysql_db:
+    name: "{{ item.item.name }}"
+    state: import
+    target: "/tmp/{{ item.item.init_script|basename }}"
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+  with_items: "{{ db_creation.results }}"
+  when: item.changed and item.item.init_script is defined
+  tags: mariadb
+
+- name: Delete init scripts from the server
+  file:
+    name: "/tmp/{{ item.item.init_script|basename }}"
+    state: absent
+  with_items: "{{ db_creation.results }}"
+  when: item.changed and item.item.init_script is defined
+  tags: mariadb
+
+- name: Remove anonymous users
+  mysql_user:
+    name: ''
+    host_all: true
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    state: absent
+  tags: mariadb
+
+- name: Create the users
+  mysql_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    host: "{{ item.host|default('localhost') }}"
+    priv: "{{ item.priv }}"
+    append_privs: "{{ item.append_privs|default('no') }}"
+    login_user: root
+    login_password: "{{ mariadb_root_password }}"
+    state: present
+  with_items: "{{ mariadb_users }}"
+  tags: mariadb

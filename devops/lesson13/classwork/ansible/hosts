@@ -1,0 +1,16 @@
+[dbms]
+managed-node-01.ansible
+
+[frontend]
+managed-node-02.ansible
+
+[backend]
+managed-node-03.ansible
+
+[production:children]
+dbms
+frontend
+backend
+
+[all:vars]
+ansible_user=vagrant

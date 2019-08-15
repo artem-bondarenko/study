@@ -1,0 +1,9 @@
+
+---
+
+- hosts: "frontend"
+  become: true
+  roles:
+    - common
+    - nginx
+    - letsencrypt
