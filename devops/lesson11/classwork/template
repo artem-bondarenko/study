@@ -1,0 +1,13 @@
+[defaults]
+user =  {{ dbs.default.user }}
+pass =  {{ dbs.default.pass }}
+host =  {{ dbs.default.host }}
+
+{% for db in dbs %}
+  {% if {{ db.enabled }} and {{ db }} != default %} 
+  [{{ db }}]
+  user = {{ db.user }}
+  pass = {{ db.pass }}
+  host = {{ db.host }}
+  {% endif %}
+{% endfor %}

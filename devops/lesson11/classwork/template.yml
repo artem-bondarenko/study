@@ -1,0 +1,16 @@
+---
+- name: "Generating my.cnf"
+  hosts: all
+  vars:
+    dbs:
+    - default:
+      state: true
+      user: "user"
+      pass: "pass"
+      host: "host"
+    - first:
+      state: false
+      user: "user"
+      pass: "pass"
+      host: "host"
+      
