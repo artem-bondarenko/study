@@ -7,10 +7,10 @@ sudo yum -y install wget yum-utils
 sudo rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key
 sudo rpm --import https://nginx.org/keys/nginx_signing.key
 sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
-sudo wget -O /etc/yum.repos.d/nginx.repo https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson02/home-vm-jenkins/nginx.repo
+sudo wget -O /etc/yum.repos.d/nginx.repo https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/it-hillel/lesson02/home-vm-jenkins/nginx.repo
 sudo yum -y install jenkins nginx net-tools policycoreutils-python java
-sudo wget -O /etc/sysconfig/jenkins https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson02/home-vm-jenkins/jenkins
-sudo wget -O /etc/nginx/conf.d/default.conf https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson02/home-vm-jenkins/default.conf
+sudo wget -O /etc/sysconfig/jenkins https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/it-hillel/lesson02/home-vm-jenkins/jenkins
+sudo wget -O /etc/nginx/conf.d/default.conf https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/it-hillel/lesson02/home-vm-jenkins/default.conf
 sudo timedatectl set-timezone Europe/Kiev
 sudo setsebool -P httpd_can_network_connect on 
 sudo systemctl start jenkins.service
