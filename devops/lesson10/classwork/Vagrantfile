@@ -13,7 +13,7 @@ sudo yum -y install wget yum-utils epel-release
 sudo rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key
 sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
 sudo yum -y install jenkins net-tools policycoreutils-python java ansible
-sudo wget -O /etc/sysconfig/jenkins https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/lesson10/classwork/jenkins
+sudo wget -O /etc/sysconfig/jenkins https://raw.githubusercontent.com/artem-bondarenko/study/master/devops/it-hillel/lesson10/classwork/jenkins
 sudo timedatectl set-timezone Europe/Kiev
 sudo setsebool -P httpd_can_network_connect on 
 sudo systemctl start jenkins.service
